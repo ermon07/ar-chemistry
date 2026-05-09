@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>AR Chemistry Web App MVP</title>
+  <title>AR Chemistry MVP v2</title>
 
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -19,127 +19,116 @@
       position: fixed;
       bottom: 0;
       width: 100%;
+      padding: 12px;
       background: rgba(0,0,0,0.7);
-      padding: 10px;
-      font-size: 16px;
     }
 
-    #combineBtn {
-      padding: 10px;
-      margin-top: 10px;
+    #status {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    button {
       width: 100%;
+      padding: 12px;
       font-size: 16px;
       background: #00aaff;
-      color: white;
       border: none;
+      color: white;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- AR SCENE -->
-  <a-scene
-    mindar-image="imageTargetSrc: assets/targets.mind;"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: true"
-    embedded
-  >
+<a-scene
+  mindar-image="imageTargetSrc: assets/targets.mind;"
+  vr-mode-ui="enabled: false"
+  device-orientation-permission-ui="enabled: false"
+  embedded
+>
 
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <a-camera position="0 0 0" look-controls="false"></a-camera>
 
-    <!-- HYDROGEN -->
-    <a-entity mindar-image-target="targetIndex: 0" data-name="H"
-      id="hydrogen">
+  <!-- HYDROGEN -->
+  <a-entity mindar-image-target="targetIndex: 0" data-name="H" id="H">
+    <a-plane color="blue" width="1" height="0.6"></a-plane>
+    <a-text value="Hydrogen (H)" align="center" color="white" position="0 0 0.01"></a-text>
+  </a-entity>
 
-      <a-plane color="blue" width="1" height="0.6"></a-plane>
+  <!-- OXYGEN -->
+  <a-entity mindar-image-target="targetIndex: 1" data-name="O" id="O">
+    <a-plane color="red" width="1" height="0.6"></a-plane>
+    <a-text value="Oxygen (O)" align="center" color="white" position="0 0 0.01"></a-text>
+  </a-entity>
 
-      <a-text value="Hydrogen (H)"
-              color="white"
-              align="center"
-              position="0 0 0.01">
-      </a-text>
+</a-scene>
 
-    </a-entity>
+<div id="ui">
+  <div id="status">No elements detected</div>
+  <button onclick="manualCheck()">Combine Elements</button>
+</div>
 
-    <!-- OXYGEN -->
-    <a-entity mindar-image-target="targetIndex: 1" data-name="O"
-      id="oxygen">
+<script>
+  // ✅ STABLE STATE SYSTEM (IMPORTANT FIX)
+  const state = {
+    H: false,
+    O: false
+  };
 
-      <a-plane color="red" width="1" height="0.6"></a-plane>
+  // register tracker safely
+  function attachTracker(id, key) {
+    const el = document.getElementById(id);
 
-      <a-text value="Oxygen (O)"
-              color="white"
-              align="center"
-              position="0 0 0.01">
-      </a-text>
-
-    </a-entity>
-
-  </a-scene>
-
-  <!-- UI PANEL -->
-  <div id="ui">
-    <div id="status">No elements detected</div>
-    <button id="combineBtn">Combine Elements</button>
-  </div>
-
-  <script>
-    let activeElements = [];
-
-    function updateUI() {
-      const status = document.getElementById("status");
-
-      if (activeElements.length === 0) {
-        status.innerText = "No elements detected";
-      } else {
-        status.innerText = "Detected: " + activeElements.join(", ");
-      }
-    }
-
-    function checkReaction() {
-      const a = activeElements.sort().join("+");
-
-      const reactions = {
-        "H+O": "💧 WATER (H₂O)",
-        "O+H": "💧 WATER (H₂O)"
-      };
-
-      if (reactions[a]) {
-        alert("Reaction: " + reactions[a]);
-      }
-    }
-
-    AFRAME.registerComponent("tracker", {
-      init: function () {
-        const name = this.el.getAttribute("data-name");
-
-        this.el.addEventListener("targetFound", () => {
-          if (!activeElements.includes(name)) {
-            activeElements.push(name);
-          }
-          updateUI();
-        });
-
-        this.el.addEventListener("targetLost", () => {
-          activeElements = activeElements.filter(x => x !== name);
-          updateUI();
-        });
-      }
+    el.addEventListener("targetFound", () => {
+      state[key] = true;
+      updateUI();
+      autoCheck();
     });
 
-    document.querySelector("#hydrogen").setAttribute("tracker", "");
-    document.querySelector("#oxygen").setAttribute("tracker", "");
-
-    document.getElementById("combineBtn").addEventListener("click", () => {
-      if (activeElements.length < 2) {
-        alert("Need 2 elements to combine");
-        return;
-      }
-      checkReaction();
+    el.addEventListener("targetLost", () => {
+      state[key] = false;
+      updateUI();
     });
+  }
 
-  </script>
+  attachTracker("H", "H");
+  attachTracker("O", "O");
+
+  function getActive() {
+    return Object.keys(state).filter(k => state[k]);
+  }
+
+  function updateUI() {
+    const active = getActive();
+
+    document.getElementById("status").innerText =
+      active.length === 0
+        ? "No elements detected"
+        : "Detected: " + active.join(", ");
+  }
+
+  // 🔥 AUTO REACTION CHECK (FIXED LOGIC)
+  function autoCheck() {
+    if (state.H && state.O) {
+      showResult("💧 WATER (H₂O)");
+    }
+  }
+
+  // manual button
+  function manualCheck() {
+    if (state.H && state.O) {
+      showResult("💧 WATER (H₂O)");
+    } else {
+      alert("Need 2 elements");
+    }
+  }
+
+  function showResult(text) {
+    document.getElementById("status").innerText = text;
+  }
+
+</script>
 
 </body>
 </html>
