@@ -15,6 +15,14 @@
       color: white;
     }
 
+    #ui {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      font-size: 16px;
+    }
 
     #combineBtn {
       padding: 10px;
@@ -34,7 +42,7 @@
   <a-scene
     mindar-image="imageTargetSrc: assets/targets.mind;"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
+    device-orientation-permission-ui="enabled: true"
     embedded
   >
 
