@@ -2,59 +2,74 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>AR Chemistry MVP + Bootstrap UI</title>
+  <title>AR Chemistry Lab MVP</title>
 
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-  <!-- A-Frame + MindAR -->
+  <!-- AR Libraries -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
- <style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: black;
-  }
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-  a-scene {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    width: 100vw !important;
-    height: 100vh !important;
-  }
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+    }
 
-  #uiPanel {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    z-index: 10;
-    background: rgba(20,20,20,0.85);
-  }
-</style>
+    a-scene {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+
+    #uiPanel {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      z-index: 10;
+      background: rgba(20,20,20,0.85);
+      color: white;
+      padding: 12px;
+    }
+
+    .card-box {
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #resultBox {
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- AR SCENE -->
+<!-- ================= AR SCENE ================= -->
 <a-scene
   mindar-image="imageTargetSrc: assets/targets.mind;"
   vr-mode-ui="enabled: false"
   device-orientation-permission-ui="enabled: false"
-  
 >
 
   <a-camera position="0 0 0" look-controls="false"></a-camera>
 
-  <!-- Hydrogen -->
+  <!-- HYDROGEN -->
   <a-entity mindar-image-target="targetIndex: 0" data-name="H" id="H">
     <a-plane color="#0d6efd" width="1" height="0.6"></a-plane>
     <a-text value="Hydrogen" align="center" color="white" position="0 0 0.01"></a-text>
   </a-entity>
 
-  <!-- Oxygen -->
+  <!-- OXYGEN -->
   <a-entity mindar-image-target="targetIndex: 1" data-name="O" id="O">
     <a-plane color="#dc3545" width="1" height="0.6"></a-plane>
     <a-text value="Oxygen" align="center" color="white" position="0 0 0.01"></a-text>
@@ -62,20 +77,40 @@
 
 </a-scene>
 
-<!-- BOOTSTRAP UI -->
+<!-- ================= UI ================= -->
 <div id="uiPanel" class="container-fluid">
 
   <div class="row mb-2">
     <div class="col">
-      <h5>AR Chemistry Lab</h5>
-      <div id="status" class="tag text-warning">Scan first element</div>
+      <h5>🧪 AR Chemistry Lab</h5>
+      <div id="status" class="text-warning">Scan first element</div>
     </div>
   </div>
 
+  <!-- SLOTS -->
+  <div class="row g-2 mb-2">
+
+    <div class="col-6">
+      <div class="bg-primary card-box">
+        Slot A<br>
+        <span id="slotA">Empty</span>
+      </div>
+    </div>
+
+    <div class="col-6">
+      <div class="bg-danger card-box">
+        Slot B<br>
+        <span id="slotB">Empty</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BUTTONS -->
   <div class="row g-2">
 
     <div class="col-6">
-      <button class="btn btn-primary w-100" onclick="combine()">
+      <button class="btn btn-success w-100" onclick="combine()">
         Combine
       </button>
     </div>
@@ -88,71 +123,86 @@
 
   </div>
 
+  <!-- RESULT -->
   <div class="mt-2">
-    <div class="tag">
-      Selected: <span id="selectedList">None</span>
+    <div class="bg-dark text-white p-2 rounded">
+      Result: <span id="resultBox">---</span>
     </div>
   </div>
 
 </div>
 
+<!-- ================= SCRIPT ================= -->
 <script>
-  // 🔒 SCAN-LOCK SYSTEM
-  let selected = [];
 
-  function attach(id, key) {
-    const el = document.getElementById(id);
+let selected = [];
 
-    el.addEventListener("targetFound", () => {
+// AR tracking attach
+function attach(id, key) {
+  const el = document.getElementById(id);
 
-      if (!selected.includes(key)) {
-        selected.push(key);
-        updateUI();
-      }
+  el.addEventListener("targetFound", () => {
 
-    });
-  }
-
-  attach("H", "H");
-  attach("O", "O");
-
-  function updateUI() {
-    document.getElementById("selectedList").innerText =
-      selected.length ? selected.join(" + ") : "None";
-
-    const status = document.getElementById("status");
-
-    if (selected.length === 0) {
-      status.innerText = "Scan first element";
-      status.className = "tag text-warning";
-    } else if (selected.length === 1) {
-      status.innerText = "Scan second element";
-      status.className = "tag text-info";
-    } else {
-      status.innerText = "Ready to combine";
-      status.className = "tag text-success";
+    if (selected.length < 2 && !selected.includes(key)) {
+      selected.push(key);
+      updateUI();
     }
+
+  });
+}
+
+attach("H", "H");
+attach("O", "O");
+
+// UI update
+function updateUI() {
+
+  document.getElementById("slotA").innerText = selected[0] || "Empty";
+  document.getElementById("slotB").innerText = selected[1] || "Empty";
+
+  const status = document.getElementById("status");
+
+  if (selected.length === 0) {
+    status.innerText = "Scan first element";
   }
 
-  function combine() {
-    const key = selected.sort().join("+");
+  else if (selected.length === 1) {
+    status.innerText = "Scan second element";
+  }
 
-    const reactions = {
-      "H+O": "💧 WATER (H₂O)"
-    };
+  else {
+    status.innerText = "Ready to combine";
+  }
+}
 
-    if (reactions[key]) {
-      document.getElementById("status").innerText =
-        "Result: " + reactions[key];
-    } else {
-      alert("No reaction found");
+// combine logic
+function combine() {
+
+  const key = selected.sort().join("+");
+
+  const reactions = {
+    "H+O": {
+      name: "Water",
+      formula: "H₂O",
+      emoji: "💧"
     }
-  }
+  };
 
-  function reset() {
-    selected = [];
-    updateUI();
+  if (reactions[key]) {
+    document.getElementById("resultBox").innerText =
+      `${reactions[key].emoji} ${reactions[key].name} (${reactions[key].formula})`;
+  } else {
+    document.getElementById("resultBox").innerText =
+      "No reaction found";
   }
+}
+
+// reset system
+function reset() {
+  selected = [];
+  document.getElementById("resultBox").innerText = "---";
+  updateUI();
+}
 
 </script>
 
