@@ -1,62 +1,145 @@
+<!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8" />
+  <title>AR Chemistry Web App MVP</title>
+
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  <script src="app.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: black;
+      color: white;
+    }
+
+    #ui {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    #combineBtn {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      font-size: 16px;
+      background: #00aaff;
+      color: white;
+      border: none;
+    }
+  </style>
 </head>
 
 <body>
+
+  <!-- AR SCENE -->
   <a-scene
-    mindar-image1="imageTargetSrc: assets/hydrogen.mind;"
+    mindar-image="imageTargetSrc: assets/targets.mind;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-  >
-   <a-scene
-    mindar-image2="imageTargetSrc: assets/oxygen.mind;"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
+    embedded
   >
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- Hydrogen -->
-    <a-entity mindar-image1-target="targetIndex: 0">
-      <a-plane
-        color="blue"
-        width="1"
-        height="0.5"
-        position="0 0 0"
-      >
-      </a-plane>
+    <!-- HYDROGEN -->
+    <a-entity mindar-image-target="targetIndex: 0" data-name="H"
+      id="hydrogen">
 
-      <a-text
-        value="Hydrogen"
-        color="white"
-        align="center"
-        position="0 0 0.01"
-      ></a-text>
-      
+      <a-plane color="blue" width="1" height="0.6"></a-plane>
+
+      <a-text value="Hydrogen (H)"
+              color="white"
+              align="center"
+              position="0 0 0.01">
+      </a-text>
+
     </a-entity>
 
-    <!-- Oxygen -->
-    <a-entity mindar-image2-target="targetIndex: 1">
-      <a-plane
-        color="green"
-        width="1"
-        height="0.5"
-        position="0 0 0"
-      >
-      </a-plane>
+    <!-- OXYGEN -->
+    <a-entity mindar-image-target="targetIndex: 1" data-name="O"
+      id="oxygen">
 
-      <a-text
-        value="Oxygen"
-        color="white"
-        align="center"
-        position="0 0 0.01"
-      ></a-text>
-      
+      <a-plane color="red" width="1" height="0.6"></a-plane>
+
+      <a-text value="Oxygen (O)"
+              color="white"
+              align="center"
+              position="0 0 0.01">
+      </a-text>
+
     </a-entity>
 
   </a-scene>
+
+  <!-- UI PANEL -->
+  <div id="ui">
+    <div id="status">No elements detected</div>
+    <button id="combineBtn">Combine Elements</button>
+  </div>
+
+  <script>
+    let activeElements = [];
+
+    function updateUI() {
+      const status = document.getElementById("status");
+
+      if (activeElements.length === 0) {
+        status.innerText = "No elements detected";
+      } else {
+        status.innerText = "Detected: " + activeElements.join(", ");
+      }
+    }
+
+    function checkReaction() {
+      const a = activeElements.sort().join("+");
+
+      const reactions = {
+        "H+O": "💧 WATER (H₂O)",
+        "O+H": "💧 WATER (H₂O)"
+      };
+
+      if (reactions[a]) {
+        alert("Reaction: " + reactions[a]);
+      }
+    }
+
+    AFRAME.registerComponent("tracker", {
+      init: function () {
+        const name = this.el.getAttribute("data-name");
+
+        this.el.addEventListener("targetFound", () => {
+          if (!activeElements.includes(name)) {
+            activeElements.push(name);
+          }
+          updateUI();
+        });
+
+        this.el.addEventListener("targetLost", () => {
+          activeElements = activeElements.filter(x => x !== name);
+          updateUI();
+        });
+      }
+    });
+
+    document.querySelector("#hydrogen").setAttribute("tracker", "");
+    document.querySelector("#oxygen").setAttribute("tracker", "");
+
+    document.getElementById("combineBtn").addEventListener("click", () => {
+      if (activeElements.length < 2) {
+        alert("Need 2 elements to combine");
+        return;
+      }
+      checkReaction();
+    });
+
+  </script>
+
 </body>
 </html>
