@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>AR Chemistry MVP v2</title>
+  <title>AR Chemistry Scan-Lock MVP</title>
 
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -19,22 +19,18 @@
       position: fixed;
       bottom: 0;
       width: 100%;
+      background: rgba(0,0,0,0.75);
       padding: 12px;
-      background: rgba(0,0,0,0.7);
-    }
-
-    #status {
-      font-size: 16px;
-      margin-bottom: 8px;
     }
 
     button {
       width: 100%;
       padding: 12px;
+      margin-top: 8px;
       font-size: 16px;
       background: #00aaff;
-      border: none;
       color: white;
+      border: none;
     }
   </style>
 </head>
@@ -53,79 +49,79 @@
   <!-- HYDROGEN -->
   <a-entity mindar-image-target="targetIndex: 0" data-name="H" id="H">
     <a-plane color="blue" width="1" height="0.6"></a-plane>
-    <a-text value="Hydrogen (H)" align="center" color="white" position="0 0 0.01"></a-text>
+    <a-text value="Hydrogen" align="center" color="white"></a-text>
   </a-entity>
 
   <!-- OXYGEN -->
   <a-entity mindar-image-target="targetIndex: 1" data-name="O" id="O">
     <a-plane color="red" width="1" height="0.6"></a-plane>
-    <a-text value="Oxygen (O)" align="center" color="white" position="0 0 0.01"></a-text>
+    <a-text value="Oxygen" align="center" color="white"></a-text>
   </a-entity>
 
 </a-scene>
 
 <div id="ui">
-  <div id="status">No elements detected</div>
-  <button onclick="manualCheck()">Combine Elements</button>
+  <div id="status">Scan first element</div>
+
+  <button onclick="combine()">Combine</button>
+  <button onclick="reset()">Reset</button>
 </div>
 
 <script>
-  // ✅ STABLE STATE SYSTEM (IMPORTANT FIX)
-  const state = {
-    H: false,
-    O: false
-  };
+  // 🔒 LOCKED SELECTION SYSTEM
+  let selected = [];
+  let lastScanned = null;
 
-  // register tracker safely
-  function attachTracker(id, key) {
+  function attach(id, key) {
     const el = document.getElementById(id);
 
     el.addEventListener("targetFound", () => {
-      state[key] = true;
-      updateUI();
-      autoCheck();
-    });
 
-    el.addEventListener("targetLost", () => {
-      state[key] = false;
-      updateUI();
+      lastScanned = key;
+
+      // add ONLY if not already selected
+      if (!selected.includes(key)) {
+        selected.push(key);
+        updateUI();
+      }
+
     });
   }
 
-  attachTracker("H", "H");
-  attachTracker("O", "O");
-
-  function getActive() {
-    return Object.keys(state).filter(k => state[k]);
-  }
+  attach("H", "H");
+  attach("O", "O");
 
   function updateUI() {
-    const active = getActive();
+    const status = document.getElementById("status");
 
-    document.getElementById("status").innerText =
-      active.length === 0
-        ? "No elements detected"
-        : "Detected: " + active.join(", ");
-  }
-
-  // 🔥 AUTO REACTION CHECK (FIXED LOGIC)
-  function autoCheck() {
-    if (state.H && state.O) {
-      showResult("💧 WATER (H₂O)");
-    }
-  }
-
-  // manual button
-  function manualCheck() {
-    if (state.H && state.O) {
-      showResult("💧 WATER (H₂O)");
+    if (selected.length === 0) {
+      status.innerText = "Scan first element";
+    } else if (selected.length === 1) {
+      status.innerText = "Selected: " + selected[0] + " (scan second)";
     } else {
-      alert("Need 2 elements");
+      status.innerText = "Ready to combine: " + selected.join(" + ");
     }
   }
 
-  function showResult(text) {
-    document.getElementById("status").innerText = text;
+  function combine() {
+    const key = selected.sort().join("+");
+
+    const reactions = {
+      "H+O": "💧 WATER (H₂O)"
+    };
+
+    if (reactions[key]) {
+      document.getElementById("status").innerText =
+        "Result: " + reactions[key];
+    } else {
+      alert("No reaction found");
+    }
+  }
+
+  function reset() {
+    selected = [];
+    lastScanned = null;
+    updateUI();
   }
 
 </script>
