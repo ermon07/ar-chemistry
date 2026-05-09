@@ -7,7 +7,12 @@
 
 <body>
   <a-scene
-    mindar-image="imageTargetSrc: assets/targets.mind;"
+    mindar-image="imageTargetSrc: assets/hydrogen.mind;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+  >
+   <a-scene
+    mindar-image="imageTargetSrc: assets/oxygen.mind;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
   >
@@ -16,7 +21,6 @@
 
     <!-- Hydrogen -->
     <a-entity mindar-image-target="targetIndex: 0">
-    <a-entity mindar-image-target="targetIndex: 1"></a-entity>
       <a-plane
         color="blue"
         width="1"
@@ -31,6 +35,26 @@
         align="center"
         position="0 0 0.01"
       ></a-text>
+      
+    </a-entity>
+
+    <!-- Oxygen -->
+    <a-entity mindar-image-target="targetIndex: 1">
+      <a-plane
+        color="green"
+        width="1"
+        height="0.5"
+        position="0 0 0"
+      >
+      </a-plane>
+
+      <a-text
+        value="Oxygen"
+        color="white"
+        align="center"
+        position="0 0 0.01"
+      ></a-text>
+      
     </a-entity>
 
   </a-scene>
